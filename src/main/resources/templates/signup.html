@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Sign Up</title>
+</head>
+<body>
+	<div th:if="${success != null}" class="logout-success-container">
+	        <div class="logout-success-alert">
+	            <i class="fas fa-check-circle"></i>
+	            <span th:text="${success}">Successfully Logged Out</span>
+	        </div>
+	 </div>
+	 
+<h2>Register</h2>
+<form th:action="@{/signup}" th:object="${registrationDto}" method="post">
+    <label>Name:</label>
+    <input type="text" th:field="*{name}" required /><br/>
+
+    <label>Email:</label>
+    <input type="email" th:field="*{email}" required /><br/>
+
+    <label>Password:</label>
+    <input type="password" th:field="*{password}" required /><br/>
+
+    <label>Role:</label>
+    <select th:field="*{role}" required>
+        <option value="" disabled selected>Select role</option>
+        <option value="LIBRARIAN">Librarian</option>
+        <option value="SCHOLAR">Scholar</option>
+        <option value="GUEST">Guest</option>
+    </select><br/>
+
+    <button type="submit">Sign Up</button>
+</form>
+
+<p th:if="${error}" th:text="${error}" style="color: red;"></p>
+</body>
+</html>

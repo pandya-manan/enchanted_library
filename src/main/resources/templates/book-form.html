@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Add New Book</title>
+    <script>
+        function toggleFields() {
+            const type = document.getElementById("type").value;
+
+            const manuscriptDiv = document.getElementById("manuscriptField");
+            const preservationDiv = document.getElementById("preservationField");
+            const digitalAccessDiv = document.getElementById("digitalAccessField");
+            const originalLanguageDiv = document.getElementById("originalLanguageField");
+            const inLibraryUseOnlyDiv = document.getElementById("inLibraryUseOnlyField");
+
+            // Hide all optional fields first
+            manuscriptDiv.style.display = "none";
+            preservationDiv.style.display = "none";
+            digitalAccessDiv.style.display = "none";
+            originalLanguageDiv.style.display = "none";
+            inLibraryUseOnlyDiv.style.display = "none";
+
+            if (type === "GENERAL") {
+                digitalAccessDiv.style.display = "block";
+            } else if (type === "RARE") {
+                preservationDiv.style.display = "block";
+                inLibraryUseOnlyDiv.style.display = "block";
+            } else if (type === "ANCIENT") {
+                manuscriptDiv.style.display = "block";
+                originalLanguageDiv.style.display = "block";
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            toggleFields();
+            document.getElementById("type").addEventListener("change", toggleFields);
+        });
+    </script>
+</head>
+<body>
+<h1>Add New Book</h1>
+<form th:action="@{/books/add}" th:object="${bookForm}" method="post" enctype="multipart/form-data">
+    <div>
+        <label>Title:</label>
+        <input type="text" th:field="*{title}" required />
+    </div>
+
+    <div>
+        <label>Author:</label>
+        <input type="text" th:field="*{author}" required />
+    </div>
+
+    <div>
+        <label>ISBN:</label>
+        <input type="text" th:field="*{isbn}" required />
+    </div>
+
+    <div>
+        <label>Section:</label>
+        <input type="text" th:field="*{section}" required />
+    </div>
+
+    <div>
+        <label>Type:</label>
+        <select th:field="*{type}" id="type">
+            <option value="GENERAL">General</option>
+            <option value="ANCIENT">Ancient Script</option>
+            <option value="RARE">Rare</option>
+        </select>
+    </div>
+
+    <div id="digitalAccessField" style="display:none;">
+        <label>Digital Access:</label>
+        <input type="checkbox" th:field="*{digitalAccess}" />
+    </div>
+
+    <div id="preservationField" style="display:none;">
+        <label>Preservation Method:</label>
+        <select th:field="*{preservationMethod}">
+            <option value="">--Select Method--</option>
+            <option value="Temperature Controlled">Temperature Controlled</option>
+            <option value="Vacuum Sealed">Vacuum Sealed</option>
+            <option value="Lamination">Lamination</option>
+            <option value="Digital Archival">Digital Archival</option>
+        </select>
+    </div>
+
+    <div id="inLibraryUseOnlyField" style="display:none;">
+        <label>In Library Use Only:</label>
+        <input type="checkbox" th:field="*{inLibraryUseOnly}" checked disabled />
+    </div>
+
+    <div id="originalLanguageField" style="display:none;">
+        <label>Original Language:</label>
+        <input type="text" th:field="*{originalLanguage}" />
+    </div>
+
+    <div>
+        <label>Status:</label>
+        <select th:field="*{status}">
+            <option value="AVAILABLE">Available</option>
+            <option value="BORROWED">Borrowed</option>
+            <option value="RESERVED">Reserved</option>
+            <option value="RESTORATION_NEEDED">Restoration Needed</option>
+        </select>
+    </div>
+
+    <div id="manuscriptField" style="display:none;">
+        <label>Manuscript File (Ancient only):</label>
+        <input type="file" name="manuscriptFile" />
+    </div>
+
+    <div>
+        <button type="submit">Add Book</button>
+    </div>
+</form>
+<br/>
+<a href="/dashboard">Back to Dashboard</a>
+</body>
+</html>

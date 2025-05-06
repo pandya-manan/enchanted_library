@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Edit Book</title>
+</head>
+<body>
+    <h2>Edit Book</h2>
+
+    <form th:action="@{/books/edit}" th:object="${book}" method="post" enctype="multipart/form-data">
+        <input type="hidden" th:field="*{id}" />
+
+        <label>Title</label>
+        <input type="text" th:field="*{title}" required />
+
+        <label>Author</label>
+        <input type="text" th:field="*{author}" required />
+
+        <label>ISBN</label>
+        <input type="text" th:field="*{isbn}" required />
+
+        <label>Section</label>
+        <input type="text" th:field="*{section}" />
+
+        <label>Status</label>
+        <select th:field="*{status}">
+            <option value="AVAILABLE">AVAILABLE</option>
+            <option value="BORROWED">BORROWED</option>
+            <!-- Add more if needed -->
+        </select>
+
+        <!-- GeneralBook Fields -->
+        <div th:if="${isGeneral}">
+            <label>Digital Access</label>
+            <input type="checkbox" th:field="*{digitalAccess}" />
+        </div>
+
+        <!-- RareBook Fields -->
+        <div th:if="${isRare}">
+            <label>Preservation Method</label>
+            <input type="text" th:field="*{preservationMethod}" />
+
+            <label>In Library Use Only</label>
+            <input type="checkbox" th:field="*{inLibraryUseOnly}" />
+        </div>
+
+        <!-- AncientScript Fields -->
+        <div th:if="${isAncient}">
+            <label>Original Language</label>
+            <input type="text" th:field="*{originalLanguage}" />
+
+            <label>Upload Manuscript File</label>
+            <input type="file" name="manuscriptFile" />
+
+            <div th:if="${book.manuscriptPath != null}">
+                <strong>Current Manuscript:</strong>
+                <a th:href="@{${book.manuscriptPath}}" target="_blank">View</a>
+            </div>
+        </div>
+
+        <br />
+        <button type="submit">Update Book</button>
+        <a href="/dashboard">Cancel</a>
+    </form>
+</body>
+</html>
