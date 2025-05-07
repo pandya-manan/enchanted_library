@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Library Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}">
+</head>
+<body>
+<div class="container mt-4">
+    <h2>Library Management Dashboard</h2>
+
+    <div class="row mt-4">
+
+        <!-- Users Card -->
+        <div class="col-md-6">
+            <div class="card border-primary mb-3">
+                <div class="card-header">User Management</div>
+                <div class="card-body">
+                    <h5 class="card-title">Registered Users</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item" th:each="user : ${users}">
+                            <strong th:text="${user.name}">User Name</strong>
+                            <span class="text-muted" th:text="' (' + ${user.type} + ')'">User Type</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Books Card -->
+        <div class="col-md-6">
+            <div class="card border-success mb-3">
+                <div class="card-header">Book Tracking</div>
+                <div class="card-body">
+                    <h5 class="card-title">Available Books</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item" th:each="book : ${books}">
+                            <strong th:text="${book.title}">Book Title</strong>
+                            <span class="text-muted" th:text="' (' + ${book.type} + ')'">Book Type</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" class="alert alert-danger mt-3" th:text="${errorMessage}"></div>
+	<form th:action="@{/logout}" method="post">
+		    <button type="submit" class="btn btn-danger">Logout</button>
+	</form>
+	<a th:href="@{/dashboard}" class="btn btn-danger">Book Dashboard</a>
+
+
+</div>
+</body>
+</html>

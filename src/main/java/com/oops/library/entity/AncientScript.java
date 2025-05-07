@@ -38,6 +38,10 @@ public class AncientScript extends Book{
 		// TODO Auto-generated method stub
 		
 	}
+	@Override
+	public String getType() {
+		return "ANCIENT";
+	}
 	
 	
 

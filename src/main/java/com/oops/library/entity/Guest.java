@@ -7,4 +7,9 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("GUEST")
 public class Guest extends User{
 
+	@Override
+	public String getType() {
+		return "GUEST";
+	}
+
 }

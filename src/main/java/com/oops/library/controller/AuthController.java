@@ -20,8 +20,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.oops.library.design.patterns.BookFactory;
 import com.oops.library.design.patterns.CatalogManager;
+import com.oops.library.design.patterns.FacadeDashboard;
 import com.oops.library.dto.BookFormDto;
 import com.oops.library.dto.RegistrationDto;
+import com.oops.library.enchanted.exception.EnchantedLibraryException;
 import com.oops.library.entity.AncientScript;
 import com.oops.library.entity.Book;
 import com.oops.library.entity.BookStatus;
@@ -35,13 +37,15 @@ public class AuthController {
 
     private final RegistrationService registrationService;
     private final CatalogManager catalog;  // our singleton book manager
+    private final FacadeDashboard facadeDashboard;
 
     @Autowired
     public AuthController(RegistrationService registrationService,
-                          BookRepository bookRepo) {
+                          BookRepository bookRepo,FacadeDashboard facadeDashboard) {
         this.registrationService = registrationService;
         // bootstrap singleton with your JPA repository
         this.catalog = CatalogManager.getInstance(bookRepo);
+        this.facadeDashboard=facadeDashboard;
     }
 
     //SIGN UP - show SIGN UP FORM//
@@ -256,7 +260,21 @@ public class AuthController {
         return "redirect:/dashboard";
     }
 
-
+    @GetMapping("/facade")
+    public String showDashboard(Model model)
+    {
+    	try
+    	{
+    		model.addAttribute("books", facadeDashboard.getBooksAndUsers().get("books"));
+    		model.addAttribute("users",facadeDashboard.getBooksAndUsers().get("users"));
+    	}
+    	catch(EnchantedLibraryException e)
+    	{
+    		model.addAttribute("errorMessage", "Error fetching either books or users");
+    	}
+    	return "facade-dashboard";
+    }
+    
     
 
 }

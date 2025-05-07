@@ -21,6 +21,10 @@ public class RareBook extends Book{
 	public void setInLibraryUseOnly(boolean inLibraryUseOnly) {
 		this.inLibraryUseOnly = inLibraryUseOnly;
 	}
+	@Override
+	public String getType() {
+		return "RARE";
+	}
 	
 	
 }

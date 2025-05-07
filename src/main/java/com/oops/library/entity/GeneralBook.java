@@ -16,6 +16,11 @@ public class GeneralBook extends Book{
 	public void setDigitalAccess(boolean digitalAccess) {
 		this.digitalAccess = digitalAccess;
 	}
+
+	@Override
+	public String getType() {
+		return "GENERAL";
+	}
 	
 	
 }
