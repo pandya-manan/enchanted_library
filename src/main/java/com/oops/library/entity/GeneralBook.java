@@ -22,5 +22,8 @@ public class GeneralBook extends Book{
 		return "GENERAL";
 	}
 	
-	
+	@Override
+	public double getLateFeeRate() {
+		return 1.0;
+	}
 }

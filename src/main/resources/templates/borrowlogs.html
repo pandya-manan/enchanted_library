@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Borrow Logs</title>
+</head>
+<body>
+<h1>Borrow Logs</h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th>Book Title</th>
+        <th>Due Date</th>
+        <th>Status</th>
+        <th>Late Fee ($)</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="log : ${borrowLogs}">
+        <td th:text="${log.book.title}"></td>
+        <td th:text="${log.returnDate}"></td>
+        <td th:text="${lateFees.get(log) > 0 ? 'Overdue' : 'On Time'}"></td>
+        <td th:text="${lateFees.get(log)}"></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

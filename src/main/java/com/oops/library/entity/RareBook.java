@@ -26,5 +26,8 @@ public class RareBook extends Book{
 		return "RARE";
 	}
 	
-	
+	@Override
+	public double getLateFeeRate() {
+		return 5.0;
+	}
 }

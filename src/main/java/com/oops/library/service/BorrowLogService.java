@@ -1,5 +1,7 @@
 package com.oops.library.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +17,11 @@ public class BorrowLogService {
 	public void saveBorrowLog(BorrowLog borrowLog) {
 		borrowRepo.save(borrowLog);
 		
+	}
+	
+	public List<BorrowLog> findAll() {
+		// Implementation to fetch all borrow logs
+		return borrowRepo.findAll(); // Replace with actual repository call
 	}
 
 }

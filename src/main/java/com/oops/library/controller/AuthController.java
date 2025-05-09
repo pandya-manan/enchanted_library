@@ -2,8 +2,11 @@ package com.oops.library.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.oops.library.command.ReturnBookCommand;
 import com.oops.library.design.patterns.BookFactory;
 import com.oops.library.design.patterns.CatalogManager;
 import com.oops.library.design.patterns.FacadeDashboard;
@@ -30,15 +34,20 @@ import com.oops.library.entity.Book;
 import com.oops.library.entity.BookStatus;
 import com.oops.library.entity.BorrowLog;
 import com.oops.library.entity.GeneralBook;
+import com.oops.library.entity.Notification;
 import com.oops.library.entity.RareBook;
 import com.oops.library.entity.User;
+import com.oops.library.observer.BookNotifierService;
+import com.oops.library.observer.LibrarianNotifier;
 import com.oops.library.repository.BookRepository;
+import com.oops.library.repository.BorrowLogRepository;
+import com.oops.library.repository.NotificationRepository;
 import com.oops.library.repository.UserRepository;
 import com.oops.library.service.BookService;
 import com.oops.library.service.BorrowLogService;
 import com.oops.library.service.RegistrationService;
-
-import jakarta.servlet.http.HttpSession;
+import com.oops.library.strategy.LendingStrategy;
+import com.oops.library.command.*;
 
 @Controller
 public class AuthController {
@@ -46,6 +55,8 @@ public class AuthController {
     private final RegistrationService registrationService;
     private final CatalogManager catalog;  // our singleton book manager
     private final FacadeDashboard facadeDashboard;
+    private final NotificationRepository notificationRepository;
+    private final LibrarianNotifier librarianNotifier;
     
     @Autowired
     private BookService bookService;
@@ -55,14 +66,24 @@ public class AuthController {
     
     @Autowired
     private UserRepository userRepository;
-
+    
     @Autowired
+    private Map<String,LendingStrategy> strategyMap;
+    
+   @Autowired
+   private BorrowLogRepository borrowLogRepository;
+   
+   @Autowired
+   private BookRepository bookRepository;
+
     public AuthController(RegistrationService registrationService,
-                          BookRepository bookRepo,FacadeDashboard facadeDashboard) {
+                          BookRepository bookRepo,FacadeDashboard facadeDashboard,NotificationRepository notificationRepository,LibrarianNotifier librarianNotifier) {
         this.registrationService = registrationService;
         // bootstrap singleton with your JPA repository
         this.catalog = CatalogManager.getInstance(bookRepo);
         this.facadeDashboard=facadeDashboard;
+        this.notificationRepository = notificationRepository;
+        this.librarianNotifier=librarianNotifier;
     }
 
     //SIGN UP - show SIGN UP FORM//
@@ -135,28 +156,21 @@ public class AuthController {
                           @RequestParam("manuscriptFile") MultipartFile file) throws IOException {
 
         // Only if type is ANCIENT and file is not empty
-    	String manuscriptPath = null;
-    	if ("ANCIENT".equalsIgnoreCase(form.getType()) && !file.isEmpty()) {
-    	    // Use absolute path relative to user.dir (the working directory)
-    	    String uploadDir = System.getProperty("user.dir") + File.separator + "uploads";
+        String manuscriptPath = null;
+        if ("ANCIENT".equalsIgnoreCase(form.getType()) && !file.isEmpty()) {
+            String uploadDir = System.getProperty("user.dir") + File.separator + "uploads";
 
-    	    // Ensure directory exists
-    	    File uploadFolder = new File(uploadDir);
-    	    if (!uploadFolder.exists()) {
-    	        uploadFolder.mkdirs();  // create if not exists
-    	    }
+            File uploadFolder = new File(uploadDir);
+            if (!uploadFolder.exists()) {
+                uploadFolder.mkdirs();  // create if not exists
+            }
 
-    	    // Unique filename
-    	    String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-    	    File dest = new File(uploadFolder, filename);
-    	    
-    	    // Save file
-    	    file.transferTo(dest);
+            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            File dest = new File(uploadFolder, filename);
+            file.transferTo(dest);
 
-    	    // Save relative path for URL access
-    	    manuscriptPath = "/uploads/" + filename;
-    	}
-    	
+            manuscriptPath = "/uploads/" + filename;
+        }
 
         // Create book using factory
         Book book = BookFactory.createBook(
@@ -172,17 +186,28 @@ public class AuthController {
             form.getIsbn()
         );
 
-        // Set additional defaults for AncientScript
+        // Additional defaults for AncientScript
         if (book instanceof AncientScript ancientScript) {
             if (ancientScript.getTranslationNotes() == null || ancientScript.getTranslationNotes().isBlank()) {
                 ancientScript.setTranslationNotes("Translation Pending");
             }
-            ancientScript.setArchived(true); // Set explicitly, even if default
+            ancientScript.setArchived(true);
         }
 
+        // Add the book to the catalog
         catalog.addBook(book);
+
+        // === Observer Pattern Integration ===
+        BookNotifierService notifierService = new BookNotifierService();
+        notifierService.addObserver(librarianNotifier);
+
+        if (book.getStatus() == BookStatus.RESTORATION_NEEDED) {
+            notifierService.notifyRestoration(book);
+        }
+
         return "redirect:/dashboard";
     }
+
 
 
     // TODO: add edit/delete mappings here, following same pattern—use catalog.updateBook(…) and catalog.removeBook(…)
@@ -298,7 +323,7 @@ public class AuthController {
     }
     
     @PostMapping("/books/borrow/{id}")
-    public String borrowBook(@PathVariable("id") Long bookId, Authentication authentication, Model model) {
+    public String borrowBook(@PathVariable("id") Long bookId,@RequestParam("borrowType") String borrowType, Authentication authentication, Model model,RedirectAttributes redirectAttrs) {
         // Extract email from Spring Security's authentication object
         String email = authentication.getName();
 
@@ -313,15 +338,15 @@ public class AuthController {
 
         // Fetch the book using the provided id
         Book book = bookService.getBookById(bookId);
-
-        if (book == null) {
-            model.addAttribute("error", "Book not found.");
-            return "dashboard";
+        if (book == null || book.getStatus() == BookStatus.BORROWED) {
+            redirectAttrs.addFlashAttribute("error", "Book unavailable.");
+            return "redirect:/dashboard";
         }
-
-        if (book.getStatus() == BookStatus.BORROWED) {
-            model.addAttribute("error", "This book is already borrowed.");
-            return "dashboard";
+        
+        LendingStrategy strategy = strategyMap.get(borrowType);
+        if (strategy == null) {
+            redirectAttrs.addFlashAttribute("error", "Invalid borrow type.");
+            return "redirect:/dashboard";
         }
 
         // Change book status to BORROWED
@@ -333,16 +358,64 @@ public class AuthController {
         borrowLog.setBorrower(loggedInUser);
         borrowLog.setBook(book);
         borrowLog.setBorrowDate(LocalDate.now());
-        LocalDate returnDate=LocalDate.now().plusDays(15);
-        borrowLog.setReturnDate(returnDate);
+        borrowLog.setReturnDate(strategy.calculateReturnDate(LocalDate.now()));
         borrowLog.setReturned(false);
         borrowLogService.saveBorrowLog(borrowLog);
 
-        model.addAttribute("message", "You have successfully borrowed the book: " + book.getTitle());
+        redirectAttrs.addFlashAttribute("message", "You have successfully borrowed the book: " + book.getTitle());
+        redirectAttrs.addFlashAttribute("borrowMessage", 
+                "Borrowed on: " + LocalDate.now() + " | Return by: " + strategy.calculateReturnDate(LocalDate.now()));
         return "redirect:/dashboard";
 
     }
 
+    @GetMapping("/books/status")
+    public String showBookStatuses(Model model, Authentication auth) throws EnchantedLibraryException {
+        boolean isLibrarian = auth.getAuthorities()
+            .contains(new SimpleGrantedAuthority("ROLE_LIBRARIAN"));
+        if (!isLibrarian) {
+            return "redirect:/dashboard";  // or an access-denied page
+        }
+
+        List<Book> books = bookService.getAllBooks(); // throws if empty
+        model.addAttribute("books", books);
+        return "book-status";  // new Thymeleaf template
+    }
     
+    @GetMapping("/notifications")
+    public String viewNotifications(Model model) {
+        List<Notification> notifications = notificationRepository.findAllByOrderByTimestampDesc();
+        model.addAttribute("notifications", notifications);
+        return "notifications";
+    }
+    
+    @GetMapping("/user/borrowed-books")
+    public String getBorrowedBooks(Model model, Principal principal) {
+        List<BorrowLog> logs = borrowLogRepository.findByBorrowerEmailAndReturnedFalse(principal.getName());
+        model.addAttribute("borrowedLogs", logs);
+        return "user-borrowed-books";
+    }
+
+    
+    @PostMapping("/books/return/{borrowLogId}")
+    public String returnBook(@PathVariable Long borrowLogId, Principal principal) {
+        Optional<BorrowLog> optionalLog = borrowLogRepository.findById(borrowLogId);
+        if (optionalLog.isPresent()) {
+            BorrowLog log = optionalLog.get();
+
+            if (!log.getBorrower().getEmail().equals(principal.getName())) {
+                return "redirect:/unauthorized"; // or return 403
+            }
+
+            Command command = new ReturnBookCommand(log, log.getBook(), borrowLogRepository, bookRepository);
+            command.execute();
+
+            return "redirect:/user/borrowed-books?success";
+        }
+
+        return "redirect:/user/borrowed-books?error";
+    }
+
+
 
 }

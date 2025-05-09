@@ -56,7 +56,10 @@
 
     <div>
         <label>Section:</label>
-        <input type="text" th:field="*{section}" required />
+        <select th:field="*{section}" id="section">
+			<option value="RESTRICTED">Restricted</option>
+			<option value="GENERAL">General</option>
+		</select>
     </div>
 
     <div>

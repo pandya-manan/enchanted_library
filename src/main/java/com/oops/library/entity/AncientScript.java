@@ -10,7 +10,10 @@ public class AncientScript extends Book{
 	
 	private String manuscriptPath;
 	
-	
+	@Override
+	public double getLateFeeRate() {
+		return 10.0;
+	}
 	
 	
 	public String getManuscriptPath() {
