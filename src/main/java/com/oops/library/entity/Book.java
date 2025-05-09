@@ -21,6 +21,8 @@ public abstract class Book {
 	@Enumerated(EnumType.STRING)
 	private BookStatus status;
 
+	public abstract double getLateFeeRate();
+
 	public abstract String getType();
 
 	public Long getId() {

@@ -18,6 +18,11 @@ public class GeneralBook extends Book{
 	}
 
 	@Override
+	public double getLateFeeRate() {
+		return 1.0;
+	}
+
+	@Override
 	public String getType() {
 		return "GENERAL";
 	}

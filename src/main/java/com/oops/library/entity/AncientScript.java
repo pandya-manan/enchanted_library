@@ -38,6 +38,12 @@ public class AncientScript extends Book{
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public double getLateFeeRate() {
+		return 10.0;
+	}
+
 	@Override
 	public String getType() {
 		return "ANCIENT";

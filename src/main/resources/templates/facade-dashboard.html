@@ -45,11 +45,19 @@
 
     <!-- Error Message -->
     <div th:if="${errorMessage}" class="alert alert-danger mt-3" th:text="${errorMessage}"></div>
-	<form th:action="@{/logout}" method="post">
-		    <button type="submit" class="btn btn-danger">Logout</button>
-	</form>
-	<a th:href="@{/dashboard}" class="btn btn-danger">Book Dashboard</a>
 
+    <!-- Logout Button -->
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="btn btn-danger">Logout</button>
+    </form>
+
+    <!-- Book Dashboard Link -->
+    <a th:href="@{/dashboard}" class="btn btn-danger">Book Dashboard</a>
+
+    <!-- Borrow Logs Button -->
+    <form th:action="@{/borrowlogs}" method="get" class="mt-3">
+        <button type="submit" class="btn btn-primary">View Borrow Logs</button>
+    </form>
 
 </div>
 </body>
