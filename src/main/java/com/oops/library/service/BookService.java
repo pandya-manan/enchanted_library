@@ -24,4 +24,14 @@ public class BookService {
 		return booksAvailableCurrently;
 	}
 
+	public Book getBookById(Long bookId) {
+		Book book=bookRepository.findBookById(bookId);
+		return book;
+	}
+
+	public void saveBook(Book book) {
+		bookRepository.save(book);
+		
+	}
+
 }

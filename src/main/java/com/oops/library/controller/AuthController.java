@@ -2,6 +2,7 @@ package com.oops.library.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,10 +28,17 @@ import com.oops.library.enchanted.exception.EnchantedLibraryException;
 import com.oops.library.entity.AncientScript;
 import com.oops.library.entity.Book;
 import com.oops.library.entity.BookStatus;
+import com.oops.library.entity.BorrowLog;
 import com.oops.library.entity.GeneralBook;
 import com.oops.library.entity.RareBook;
+import com.oops.library.entity.User;
 import com.oops.library.repository.BookRepository;
+import com.oops.library.repository.UserRepository;
+import com.oops.library.service.BookService;
+import com.oops.library.service.BorrowLogService;
 import com.oops.library.service.RegistrationService;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class AuthController {
@@ -38,6 +46,15 @@ public class AuthController {
     private final RegistrationService registrationService;
     private final CatalogManager catalog;  // our singleton book manager
     private final FacadeDashboard facadeDashboard;
+    
+    @Autowired
+    private BookService bookService;
+    
+    @Autowired
+    private BorrowLogService borrowLogService;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     public AuthController(RegistrationService registrationService,
@@ -88,9 +105,14 @@ public class AuthController {
         List<Book> books = catalog.getAllBooks();
         boolean isLibrarian = auth.getAuthorities()
                 .contains(new SimpleGrantedAuthority("ROLE_LIBRARIAN"));
+        boolean isScholar=auth.getAuthorities()
+                .contains(new SimpleGrantedAuthority("ROLE_SCHOLAR"));
+        boolean isGuest=auth.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_GUEST"));
 
         model.addAttribute("books", books);
         model.addAttribute("isLibrarian", isLibrarian);
+        model.addAttribute("isScholar", isScholar);
+        model.addAttribute("isGuest", isGuest);
         return "dashboard";
     }
 
@@ -275,6 +297,50 @@ public class AuthController {
     	return "facade-dashboard";
     }
     
+    @PostMapping("/books/borrow/{id}")
+    public String borrowBook(@PathVariable("id") Long bookId, Authentication authentication, Model model) {
+        // Extract email from Spring Security's authentication object
+        String email = authentication.getName();
+
+        // Fetch the User entity using the email
+        User loggedInUser = userRepository.findByEmail(email)
+                .orElse(null);
+
+        if (loggedInUser == null) {
+            model.addAttribute("error", "You must be logged in to borrow a book.");
+            return "login";
+        }
+
+        // Fetch the book using the provided id
+        Book book = bookService.getBookById(bookId);
+
+        if (book == null) {
+            model.addAttribute("error", "Book not found.");
+            return "dashboard";
+        }
+
+        if (book.getStatus() == BookStatus.BORROWED) {
+            model.addAttribute("error", "This book is already borrowed.");
+            return "dashboard";
+        }
+
+        // Change book status to BORROWED
+        book.setStatus(BookStatus.BORROWED);
+        bookService.saveBook(book);
+
+        // Create a new BorrowLog entry
+        BorrowLog borrowLog = new BorrowLog();
+        borrowLog.setBorrower(loggedInUser);
+        borrowLog.setBook(book);
+        borrowLog.setBorrowDate(LocalDate.now());
+        borrowLog.setReturned(false);
+        borrowLogService.saveBorrowLog(borrowLog);
+
+        model.addAttribute("message", "You have successfully borrowed the book: " + book.getTitle());
+        return "redirect:/dashboard";
+
+    }
+
     
 
 }

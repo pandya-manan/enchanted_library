@@ -6,15 +6,15 @@
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+Xq0QsN" crossorigin="anonymous">
 </head>
 <body>
-	<div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+  <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
 
   <div class="container">
     <h1>Library Dashboard</h1>
+
     <!-- Logout Button -->
-	<!-- Logout Button in Dashboard -->
-	<form th:action="@{/logout}" method="post">
-	    <button type="submit" class="btn btn-danger">Logout</button>
-	</form>
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="btn btn-danger">Logout</button>
+    </form>
 
     <!-- Librarian-specific content -->
     <div th:if="${isLibrarian}">
@@ -27,25 +27,45 @@
         <tr>
           <th>Title</th>
           <th>Author</th>
-		  <th>Status</th>
+          <th>Status</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr th:each="book: ${books}">
+        <tr th:each="book : ${books}">
           <td th:text="${book.title}">Title</td>
           <td th:text="${book.author}">Author</td>
-		  <td th:text="${book.status}">Status</td>
+          <td th:text="${book.status}">Status</td>
           <td>
             <a th:href="@{/books/view/{id}(id=${book.id})}" class="btn btn-info btn-sm">View</a>
+
+            <!-- Only for Librarian: Edit & Delete -->
             <span th:if="${isLibrarian}">
               <a th:href="@{/books/edit/{id}(id=${book.id})}" class="btn btn-warning btn-sm">Edit</a>
 
-              <!-- Delete button as a form -->
-              <form th:action="@{/books/delete/{id}(id=${book.id})}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this book?');">
-                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              <form th:action="@{/books/delete/{id}(id=${book.id})}" method="post"
+                    style="display:inline;" 
+                    onsubmit="return confirm('Are you sure you want to delete this book?');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
               </form>
             </span>
+
+            <!-- Only for Scholar or Guest: Borrow -->
+			<span th:if="${isScholar or isGuest}">
+			  <form th:action="@{/books/borrow/{id}(id=${book.id})}" method="post"
+			        style="display:inline;"
+			        onsubmit="return confirm('Are you sure you want to borrow this book?');">
+			    <button type="submit"
+			            class="btn btn-success btn-sm"
+			            th:attr="disabled=${book.status.name() == 'BORROWED'}"
+			            th:title="${book.status.name() == 'BORROWED'} ? 'Already borrowed' : 'Click to borrow'">
+			      Borrow
+			    </button>
+			  </form>
+			</span>
+
+
+
           </td>
         </tr>
       </tbody>
