@@ -333,6 +333,8 @@ public class AuthController {
         borrowLog.setBorrower(loggedInUser);
         borrowLog.setBook(book);
         borrowLog.setBorrowDate(LocalDate.now());
+        LocalDate returnDate=LocalDate.now().plusDays(15);
+        borrowLog.setReturnDate(returnDate);
         borrowLog.setReturned(false);
         borrowLogService.saveBorrowLog(borrowLog);
 
