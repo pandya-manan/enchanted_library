@@ -376,10 +376,19 @@ public class AuthController {
         if (!isLibrarian) {
             return "redirect:/dashboard";  // or an access-denied page
         }
+        try
+        {
+        	List<Book> books = bookService.getAllBooks(); // throws if empty
+            model.addAttribute("books", books);
+            return "book-status";  // new Thymeleaf template
+        }
+        catch(EnchantedLibraryException e)
+        {
+        	model.addAttribute("error", e.getMessage());
+        	return "book-status";
 
-        List<Book> books = bookService.getAllBooks(); // throws if empty
-        model.addAttribute("books", books);
-        return "book-status";  // new Thymeleaf template
+        }
+        
     }
     
     @GetMapping("/notifications")
@@ -416,6 +425,6 @@ public class AuthController {
         return "redirect:/user/borrowed-books?error";
     }
 
-
+    
 
 }

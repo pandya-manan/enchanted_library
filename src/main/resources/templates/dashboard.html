@@ -152,7 +152,7 @@
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>
-                            <form th:if="${(isScholar or isGuest) and book.status?.name() != 'BORROWED'}" th:action="@{/books/borrow/{id}(id=${book.id})}" method="post" class="d-flex align-items-center gap-2">
+                            <form th:if="${(isScholar or isGuest) and (book.status?.name() != 'BORROWED' and book.status?.name() != 'RESTORATION_NEEDED')}" th:action="@{/books/borrow/{id}(id=${book.id})}" method="post" class="d-flex align-items-center gap-2">
                                 <select name="borrowType" required class="form-select form-select-sm">
                                     <option value="" disabled selected>Type</option>
                                     <option value="academic">Academic</option>
@@ -172,6 +172,14 @@
     </div>
 </div>
 
+<div th:if="${isScholar or isGuest}">
+    <a th:href="@{/user/borrowed-books}" class="btn btn-outline-info">My Borrowed Books</a>
+</div>
+<div th:if="${isLibrarian}">
+    <a th:href="@{/notifications}" class="btn btn-outline-info">Notifications</a>
+    <a th:href="@{/books/status}" class="btn btn-outline-info">Book Status</a>
+	<a th:href="@{/facade}" class="btn btn-outline-info">User and Book Management</a>
+</div>
 <!-- Bootstrap Icons & JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
